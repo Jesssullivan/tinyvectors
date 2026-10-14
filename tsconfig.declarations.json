@@ -6,6 +6,7 @@
     "declaration": true,
     "declarationMap": true,
     "outDir": "dist-types",
+    "rootDir": "./src",
     "skipLibCheck": true,
     "types": ["svelte", "node"]
   }

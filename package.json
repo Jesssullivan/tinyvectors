@@ -1,21 +1,22 @@
 {
   "name": "@tummycrypt/tinyvectors",
-  "version": "0.3.7",
+  "version": "1.0.0",
+  "private": true,
   "description": "Animated vector blob backgrounds with physics simulation for Svelte 5",
   "type": "module",
-  "packageManager": "pnpm@9.15.9",
+  "packageManager": "pnpm@10.13.1",
   "license": "Zlib",
   "author": {
     "name": "Jess Sullivan",
     "email": "jess@sulliwood.org"
   },
-  "homepage": "https://github.com/tinyland-inc/tinyvectors#readme",
+  "homepage": "https://github.com/xoxd-ai/tinyvectors#readme",
   "bugs": {
-    "url": "https://github.com/tinyland-inc/tinyvectors/issues"
+    "url": "https://github.com/xoxd-ai/tinyvectors/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tinyland-inc/tinyvectors.git"
+    "url": "git+https://github.com/xoxd-ai/tinyvectors.git"
   },
   "keywords": [
     "svelte",
@@ -71,7 +72,7 @@
     "build": "vite build && node scripts/build-declarations.mjs",
     "dev": "vite --config vite.dev.config.ts",
     "dev:watch": "vite build --watch",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-check --tsgo --tsconfig ./tsconfig.json",
     "check:release-metadata": "node scripts/check-release-metadata.mjs",
     "check:package": "publint",
     "check:bundle-size": "node scripts/check-bundle-size.mjs",
@@ -79,38 +80,34 @@
     "test": "vitest run",
     "test:browser:motion": "node scripts/probe-motion-cdp.mjs",
     "test:watch": "vitest",
-    "test:pbt": "vitest run --testNamePattern='INVARIANT'",
-    "prepublishOnly": "pnpm run check:release-metadata && pnpm run build && pnpm run check:package && pnpm run check:bundle-size"
+    "test:pbt": "vitest run --testNamePattern='INVARIANT'"
   },
   "peerDependencies": {
-    "svelte": ">=5.20.0"
+    "svelte": "5.57.2"
   },
   "devDependencies": {
-    "@sveltejs/package": "^2.5.7",
-    "@sveltejs/vite-plugin-svelte": "^5.1.1",
-    "@types/node": "^22.0.0",
-    "fast-check": "^3.23.0",
-    "publint": "^0.2.0",
-    "svelte": "^5.55.4",
-    "svelte-check": "^4.4.6",
-    "typescript": "^5.0.0",
-    "vite": "^6.4.2",
-    "vitest": "^4.1.4"
-  },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public",
-    "provenance": true
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@types/node": "^22.20.1",
+    "fast-check": "^4.10.2",
+    "publint": "^0.3.25",
+    "svelte": "5.57.2",
+    "svelte-check": "4.7.6",
+    "typescript": "7.0.2",
+    "vite": "8.3.3",
+    "vitest": "5.0.3"
   },
   "pnpm": {
     "overrides": {
       "picomatch": "^4.0.4"
+    },
+    "patchedDependencies": {
+      "svelte-check@4.7.6": "patches/svelte-check@4.7.6.patch"
     },
     "onlyBuiltDependencies": [
       "esbuild"
     ]
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=22.12.0"
   }
 }

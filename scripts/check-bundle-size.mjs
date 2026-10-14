@@ -43,14 +43,14 @@ console.log(TinyVectors);
 		logLevel: 'silent',
 		build: {
 			write: false,
-			minify: 'esbuild',
+			minify: true,
 			target: 'es2022',
-			rollupOptions: {
+			rolldownOptions: {
 				input: entry,
 				external: (id) => id === 'svelte' || id.startsWith('svelte/'),
 				output: {
 					format: 'es',
-					inlineDynamicImports: true,
+					codeSplitting: false,
 				},
 			},
 		},

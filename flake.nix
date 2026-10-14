@@ -24,7 +24,7 @@
             bazel
             pkgs.bazelisk
             pkgs.nodejs_22
-            (pkgs.pnpm_9 or pkgs.pnpm)
+            (pkgs.pnpm_10 or pkgs.pnpm)
           ];
           shellHook = ''
             echo "tinyvectors dev shell"

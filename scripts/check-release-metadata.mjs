@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const read = (relativePath) =>
 	readFileSync(new URL(relativePath, import.meta.url), 'utf8');
@@ -7,7 +7,6 @@ const packageJson = JSON.parse(read('../package.json'));
 const moduleBazel = read('../MODULE.bazel');
 const buildBazel = read('../BUILD.bazel');
 const ciWorkflow = read('../.github/workflows/ci.yml');
-const publishWorkflow = read('../.github/workflows/publish.yml');
 const changelog = read('../CHANGELOG.md');
 const expectedPnpmVersion = packageJson.packageManager?.replace(/^pnpm@/, '');
 const expectedNodeMajor = packageJson.engines?.node?.match(/>=\s*(\d+)/)?.[1];
@@ -16,8 +15,6 @@ const expectedBazelTargets =
 const expectedPackageDir = './bazel-bin/pkg';
 const expectedPackageConsumerCommand = 'node scripts/check-package-consumer.mjs ./bazel-bin/pkg';
 const expectedPackageCheckCommand = 'pnpm run check:package && pnpm run check:bundle-size';
-const expectedPrepublishOnlyCommand =
-	'pnpm run check:release-metadata && pnpm run build && pnpm run check:package && pnpm run check:bundle-size';
 const expectedSharedWorkflowInputs = {
 	runner_mode: 'repo_owned',
 	runner_labels_json: '${{ vars.PRIMARY_LINUX_RUNNER_LABELS_JSON }}',
@@ -125,8 +122,10 @@ const checks = [
 	},
 	{
 		label: 'CI reusable package workflow',
-		actual: sharedPackageWorkflow(ciWorkflow, 'CI reusable workflow'),
-		expected: sharedPackageWorkflow(publishWorkflow, 'publish reusable workflow'),
+		actual: /^(?:tinyland-inc|xoxd-ai)\//.test(sharedPackageWorkflow(ciWorkflow, 'CI reusable workflow'))
+			? 'pinned'
+			: 'unpinned',
+		expected: 'pinned',
 	},
 	{
 		label: 'package consumer check script',
@@ -138,59 +137,54 @@ const checks = [
 		actual: packageJson.scripts?.['check:bundle-size'],
 		expected: 'node scripts/check-bundle-size.mjs',
 	},
+	// RU6/RU8 (2026-10-08): Bazel is the only distribution path. The package
+	// is private, carries no publish config or publish hook, and the repo has
+	// no tag-triggered publish workflow.
+	{
+		label: 'package.json private',
+		actual: String(packageJson.private === true),
+		expected: 'true',
+	},
+	{
+		label: 'package.json publishConfig',
+		actual: packageJson.publishConfig ? 'present' : 'absent',
+		expected: 'absent',
+	},
 	{
 		label: 'prepublishOnly script',
-		actual: packageJson.scripts?.prepublishOnly,
-		expected: expectedPrepublishOnlyCommand,
+		actual: packageJson.scripts?.prepublishOnly ? 'present' : 'absent',
+		expected: 'absent',
+	},
+	{
+		label: '.github/workflows/publish.yml',
+		actual: existsSync(new URL('../.github/workflows/publish.yml', import.meta.url))
+			? 'present'
+			: 'absent',
+		expected: 'absent',
 	},
 	{
 		label: 'CI publish dry-run',
 		actual: extractWorkflowValue(ciWorkflow, 'dry_run', 'CI dry_run'),
 		expected: 'true',
 	},
-	{
-		label: 'tag publish dry-run',
-		actual: extractWorkflowValue(publishWorkflow, 'dry_run', 'publish dry_run'),
-		expected: 'false',
-	},
 ];
 
 for (const [key, expected] of Object.entries(expectedSharedWorkflowInputs)) {
-	checks.push(
-		{
-			label: `CI ${key}`,
-			actual: extractWorkflowValue(ciWorkflow, key, `CI ${key}`),
-			expected,
-		},
-		{
-			label: `publish ${key}`,
-			actual: extractWorkflowValue(publishWorkflow, key, `publish ${key}`),
-			expected,
-		},
-	);
-}
-
-// GitHub Packages channel retired 2026-07-25 (TIN-3165); the input must stay absent in both workflows.
-for (const [label, source] of [
-	['CI', ciWorkflow],
-	['publish', publishWorkflow],
-]) {
 	checks.push({
-		label: `${label} github_package_name`,
-		actual: /^\s*github_package_name:/m.test(source) ? 'present' : 'absent',
-		expected: 'absent',
+		label: `CI ${key}`,
+		actual: extractWorkflowValue(ciWorkflow, key, `CI ${key}`),
+		expected,
 	});
 }
+
+// GitHub Packages channel retired 2026-07-25 (TIN-3165); the input must stay absent.
+checks.push({
+	label: 'CI github_package_name',
+	actual: /^\s*github_package_name:/m.test(ciWorkflow) ? 'present' : 'absent',
+	expected: 'absent',
+});
 
 const failures = checks.filter((check) => check.actual !== check.expected);
-
-if (packageJson.publishConfig?.provenance && !/id-token:\s*write/.test(publishWorkflow)) {
-	failures.push({
-		label: 'publish workflow id-token permission',
-		actual: 'missing',
-		expected: 'write',
-	});
-}
 
 if (failures.length > 0) {
 	for (const failure of failures) {

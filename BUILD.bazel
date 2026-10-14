@@ -14,10 +14,9 @@ Build strategy:
   - vitest for PBT tests (property-based tests using fast-check)
 """
 
-load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library", "js_run_binary")
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library", "js_run_binary", "js_test")
 load("@aspect_rules_js//npm:defs.bzl", "npm_package")
 load("@tummycrypt_tinyvectors_npm//:defs.bzl", "npm_link_all_packages")
-load("@tummycrypt_tinyvectors_npm//:svelte-check/package_json.bzl", svelte_check_bin = "bin")
 load("@tummycrypt_tinyvectors_npm//:vitest/package_json.bzl", vitest_bin = "bin")
 
 # =============================================================================
@@ -26,7 +25,18 @@ load("@tummycrypt_tinyvectors_npm//:vitest/package_json.bzl", vitest_bin = "bin"
 
 npm_link_all_packages(name = "node_modules")
 
-svelte_check_bin.svelte_check_binary(name = "svelte_check")
+# RU13: svelte-check runs in its TypeScript 7 native mode (--tsgo) through a
+# runner that checks a writable scratch copy (see the script header).
+js_binary(
+    name = "svelte_check",
+    data = [
+        ":node_modules",
+        ":node_modules/svelte",
+        ":node_modules/svelte-check",
+        ":node_modules/typescript",
+    ],
+    entry_point = "scripts/bazel/run-svelte-check.mjs",
+)
 
 js_binary(
     name = "build_declarations",
@@ -149,7 +159,7 @@ npm_package(
         ":tinyvectors",
     ],
     package = "@tummycrypt/tinyvectors",
-    version = "0.3.7",
+    version = "1.0.0",
     visibility = ["//visibility:public"],
 )
 
@@ -226,7 +236,8 @@ vitest_bin.vitest_test(
 #
 # Uses svelte-check for type validation of .svelte and .ts files.
 # This is preferred over plain tsc for packages containing Svelte components,
-# as it understands .svelte file boundaries and runes syntax.
+# as it understands .svelte file boundaries and runes syntax. RU13: it runs as
+# `svelte-check --tsgo`, so TypeScript 7.0.2 does the checking.
 # =============================================================================
 
 js_run_binary(
@@ -241,11 +252,33 @@ js_run_binary(
         ":node_modules",
     ],
     args = [
-        "--tsconfig",
         "$(execpath tsconfig.json)",
     ],
     stdout = "typecheck.log",
     visibility = ["//visibility:public"],
+)
+
+# Seeded-error canary for the gate above: under --tsgo a tsconfig that checks
+# nothing reports 0 errors (sveltejs/language-tools#3136), so this test fails
+# unless a seeded .ts and a seeded .svelte type error are both reported.
+js_test(
+    name = "typecheck_canary_test",
+    args = [
+        "$(rootpath tsconfig.json)",
+        "--canary",
+    ],
+    data = glob([
+        "src/**/*.ts",
+        "src/**/*.svelte",
+    ]) + [
+        "package.json",
+        "tsconfig.json",
+        ":node_modules",
+        ":node_modules/svelte",
+        ":node_modules/svelte-check",
+        ":node_modules/typescript",
+    ],
+    entry_point = "scripts/bazel/run-svelte-check.mjs",
 )
 
 # =============================================================================

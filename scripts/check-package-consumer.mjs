@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -10,7 +10,14 @@ const require = createRequire(import.meta.url);
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const packageDir = resolve(process.cwd(), process.argv[2] ?? './bazel-bin/pkg');
 const svelteDir = resolve(repoRoot, 'node_modules/svelte');
-const tscPath = require.resolve('typescript/lib/tsc.js');
+// TypeScript 7 exposes only package.json and its version stub through the
+// exports map, so resolve the `tsc` bin through package.json (RU13).
+const tscPackageJson = require.resolve('typescript/package.json');
+const tscManifest = JSON.parse(readFileSync(tscPackageJson, 'utf8'));
+const tscPath = join(
+	dirname(tscPackageJson),
+	typeof tscManifest.bin === 'string' ? tscManifest.bin : tscManifest.bin.tsc,
+);
 
 if (!existsSync(resolve(packageDir, 'package.json'))) {
 	console.error(`Package directory is missing package.json: ${packageDir}`);

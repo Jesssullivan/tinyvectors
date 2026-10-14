@@ -12,10 +12,6 @@
     "isolatedModules": true,
     "declaration": true,
     "declarationMap": true,
-    "baseUrl": ".",
-    "paths": {
-      "$lib/*": ["src/*"]
-    },
     "types": ["svelte"]
   },
   "include": ["src/**/*"],
