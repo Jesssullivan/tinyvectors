@@ -22,7 +22,7 @@ jobs:
       npm_publish_mode: disabled
       node_versions: '["22"]'
       publish_node_version: "22"
-      pnpm_version: "9.15.9"
+      pnpm_version: "10.13.1"
       metadata_check_command: pnpm run check:release-metadata
       typecheck_command: pnpm run check
       unit_test_command: pnpm run test

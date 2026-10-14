@@ -6,7 +6,7 @@ const devServerPort = Number(process.env.TINYVECTORS_VITE_PORT ?? 5175);
 const hmrPort = Number(process.env.TINYVECTORS_VITE_HMR_PORT ?? 24679);
 
 export default defineConfig({
-	root: resolve(__dirname, 'dev'),
+	root: resolve(import.meta.dirname, 'dev'),
 
 	plugins: [
 		svelte({
@@ -18,7 +18,7 @@ export default defineConfig({
 
 	resolve: {
 		alias: {
-			$lib: resolve(__dirname, 'src'),
+			$lib: resolve(import.meta.dirname, 'src'),
 		},
 	},
 

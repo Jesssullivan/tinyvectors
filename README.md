@@ -6,29 +6,27 @@ This package is what powers the moving background layer on `transscendsurvival.o
 
 ## Install
 
-> **npm channel retired (2026-07-25).** Versions on registry.npmjs.org stop
-> at 0.3.0 and receive no further publishes. Consume this package through the
-> [tinyland-inc/bazel-registry](https://github.com/tinyland-inc/bazel-registry)
-> graph instead — either as a `bazel_dep` (`tummycrypt_tinyvectors`), or by
-> pinning the exact GitHub tag archive the registry's `source.json` names and
-> building `dist/` from source in a `prepare` hook that verifies the archive
-> sha256 against the registry pin (reference implementations:
-> `scripts/build-tinyvectors.mjs` in `Jesssullivan/dsa-woodshed.space` and
-> `Great-Falls-Tool-Bus/greatfallstoolbus.org`).
+This package is distributed through Bazel only (RU6/RU8): signed git tags plus
+the `tummycrypt_tinyvectors` module in
+[xoxd-ai/bazel-registry](https://github.com/xoxd-ai/bazel-registry). The npm
+channel stopped at 0.3.0 and nothing newer is published there.
 
-```bash
-# Bazel (MODULE.bazel), resolved via the tinyland registry chain:
-bazel_dep(name = "tummycrypt_tinyvectors", version = "0.3.5")
+```starlark
+# MODULE.bazel
+bazel_dep(name = "tummycrypt_tinyvectors", version = "1.0.0")
 ```
 
-```bash
-# pnpm, pinned to the registry-named tag archive:
-pnpm add @tummycrypt/tinyvectors@https://github.com/tinyland-inc/tinyvectors/archive/refs/tags/v0.3.5.tar.gz
+```starlark
+# BUILD.bazel: link the Bazel-built package into node_modules
+npm_link_package(
+    name = "node_modules/@tummycrypt/tinyvectors",
+    src = "@tummycrypt_tinyvectors//:pkg",
+)
 ```
 
 Peer dependency:
 
-- `svelte@>=5.20.0`
+- `svelte@5.57.2` (exact)
 
 ## Quick Start
 
@@ -106,8 +104,8 @@ Use the top-level entry point when you just want the packaged component surface.
 ## Local Development
 
 ```bash
-pnpm install
-pnpm check
+pnpm install   # pnpm 10.13.1 via packageManager / corepack
+pnpm check     # svelte-check --tsgo (TypeScript 7.0.2)
 pnpm test
 pnpm build
 ```
@@ -123,7 +121,7 @@ Useful extra commands:
 - `pnpm check:bundle-size` measures the tree-shaken `{ TinyVectors }` consumer bundle with Svelte externalized
 - `pnpm check:package-consumer` validates the Bazel-built package from `./bazel-bin/pkg` in a temporary consumer workspace
 
-The Bazel-to-npm release flow is documented in [docs/release-flow.md](./docs/release-flow.md).
+The Bazel release flow is documented in [docs/release-flow.md](./docs/release-flow.md).
 The physics interaction direction is documented in [docs/physics-feel-contract.md](./docs/physics-feel-contract.md).
 
 The dev app includes a browser/device harness for interaction work:
@@ -135,9 +133,8 @@ The dev app includes a browser/device harness for interaction work:
 
 ## Release Truth
 
-The supported consumer paths are the bazel-registry graph and the
-registry-named git tag archive (see the Install section's retirement notice);
-the npm channel is retired at 0.3.0.
+The supported consumer path is the xoxd-ai/bazel-registry graph (see
+Install); the npm channel is retired at 0.3.0 and the package is private.
 
 This repo carries Bazel metadata as a first-class release surface: `//:pkg`
 is the publishable package, and the bazel-registry entry (byte-identical

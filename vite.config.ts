@@ -24,16 +24,17 @@ export default defineConfig({
 	build: {
 		lib: {
 			entry: {
-				index: resolve(__dirname, 'src/index.ts'),
-				'core/index': resolve(__dirname, 'src/core/index.ts'),
-				'motion/index': resolve(__dirname, 'src/motion/index.ts'),
-				'themes/index': resolve(__dirname, 'src/themes/index.ts'),
-				'svelte/index': resolve(__dirname, 'src/svelte/index.ts'),
+				index: resolve(import.meta.dirname, 'src/index.ts'),
+				'core/index': resolve(import.meta.dirname, 'src/core/index.ts'),
+				'motion/index': resolve(import.meta.dirname, 'src/motion/index.ts'),
+				'themes/index': resolve(import.meta.dirname, 'src/themes/index.ts'),
+				'svelte/index': resolve(import.meta.dirname, 'src/svelte/index.ts'),
 			},
 			formats: ['es'],
 		},
 
-		rollupOptions: {
+		// Vite 8 bundles with Rolldown; `rollupOptions` is only a deprecated alias.
+		rolldownOptions: {
 			external: [/^svelte($|\/)/],
 			output: {
 				preserveModules: true,
@@ -61,13 +62,14 @@ export default defineConfig({
 		target: 'es2022',
 
 		
-		minify: 'esbuild',
+		// Vite 8 default minifier (Oxc); esbuild is no longer a Vite dependency.
+		minify: true,
 	},
 
 	
 	resolve: {
 		alias: {
-			$lib: resolve(__dirname, 'src'),
+			$lib: resolve(import.meta.dirname, 'src'),
 		},
 	},
 });

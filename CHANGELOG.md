@@ -1,9 +1,71 @@
 # Changelog
 
-> **Distribution note (2026-07-25):** the npm channel is retired. npm
-> publishes stop at 0.3.0; 0.3.1+ ship as git tags + entries in
-> [tinyland-inc/bazel-registry](https://github.com/tinyland-inc/bazel-registry)
-> only. See the README's Install section for the sanctioned consumption paths.
+> **Distribution (RU6/RU8, 2026-10-08):** this package is distributed only
+> through Bazel: signed git tags plus entries in
+> [xoxd-ai/bazel-registry](https://github.com/xoxd-ai/bazel-registry). The npm
+> channel stopped at 0.3.0 (retired 2026-07-25) and the package is now
+> `private`; nothing is published to npmjs or GitHub Packages.
+
+## 1.0.0 - 2026-10-14
+
+Stack uplift to the estate RU1 stack. The runtime API is unchanged: every
+export, prop, default and physics constant is the same as 0.3.7. It is a major
+version because the Svelte peer, the toolchain and the distribution contract
+change (RU10).
+
+### Breaking changes
+
+- **Svelte peer is exact `5.57.2`** (was `>=5.20.0`), per the estate pin policy
+  (RS11/RU5). Consumers must be on Svelte 5.57.2.
+- **Bazel-only distribution.** `package.json` is `private: true`;
+  `publishConfig`, the `prepublishOnly` hook and `.github/workflows/publish.yml`
+  are removed (RU8). Consume `tummycrypt_tinyvectors` 1.0.0 from
+  xoxd-ai/bazel-registry.
+- **Build toolchain:** TypeScript 7.0.2 (native compiler), Vite 8.3.3
+  (Rolldown, Oxc minifier), @sveltejs/vite-plugin-svelte 7.3.1, vitest 5.0.3,
+  svelte-check 4.7.6, pnpm 10.13.1, Node toolchain 22.22.0 (engines
+  `>=22.12.0`). A consumer that builds this module from source (Bazel
+  `@tummycrypt_tinyvectors//:pkg`, or a tag-archive `prepare` hook) needs
+  pnpm 10 and Node >= 22.12.
+- `@sveltejs/package` is dropped from devDependencies (it was not used by any
+  build step; declarations come from `tsc` plus the hand-written
+  `*.svelte.d.ts` files).
+
+### Migration
+
+1. Bazel consumers: `bazel_dep(name = "tummycrypt_tinyvectors", version = "1.0.0")`
+   and refresh `MODULE.bazel.lock`. Keep linking `@tummycrypt_tinyvectors//:pkg`
+   with `npm_link_package`; target names are unchanged.
+2. Pin `svelte` to exactly `5.57.2` in the consuming app.
+3. Remove any `@tummycrypt/tinyvectors` npm or tag-tarball specifier from
+   `package.json`; the registry module is the only supported source.
+4. No source changes are needed: imports, component props, the
+   `themes/css` entry and all exported names are identical to 0.3.7.
+
+### Tooling details
+
+- TypeScript 7 (RU13): `tsc` is resolved through `typescript/package.json`
+  `bin` because the TypeScript 7 exports map no longer exposes
+  `lib/tsc.js`. `tsconfig.json` drops `baseUrl`/`paths` (removed in
+  TypeScript 7; no source used `$lib`).
+- Type checking is `svelte-check --tsgo` (TypeScript 7 does the checking). The
+  RU13 patch set is copied verbatim from xoxd-ai/site.scaffold (`patches/`,
+  `.pnpmfile.cjs`); only `patches/svelte-check@4.7.6.patch` is wired here,
+  since this package uses neither SvelteKit nor devalue. svelte-check's
+  in-process svelte2tsx parser loads `@typescript/typescript6` through the
+  `.pnpmfile.cjs` hook (operator ruling RU13b); nothing type-checks with it.
+- Bazel: `//:typecheck` runs svelte-check `--tsgo` in a writable scratch copy
+  (`scripts/bazel/run-svelte-check.mjs`), and the new `//:typecheck_canary_test`
+  proves the gate reports a seeded `.ts` and `.svelte` error
+  (sveltejs/language-tools#3136).
+- Vite 8: `build.rolldownOptions` replaces the deprecated `rollupOptions`
+  alias, and the default Oxc minifier replaces esbuild in both the library
+  build and the bundle-size gate.
+- fast-check 4, publint 0.3.
+- `scripts/check-release-metadata.mjs` now asserts the RU8 contract
+  (`private`, no `publishConfig`, no `prepublishOnly`, no `publish.yml`)
+  instead of the old publish-workflow parity checks.
+- Repository URLs point at xoxd-ai.
 
 ## 0.3.7 - 2026-09-01
 
